@@ -205,7 +205,9 @@ const parse_flat = async (url: string): Promise<Flat> => {
     // Sections
     console.log(
       "Found sections:",
-      sel.$("h3:not(.truncate_title)").map((e) => e.textContent?.trim())
+      sel
+        .$(":not([id^=freitext_]) > h3:not(.truncate_title)")
+        .map((e) => e.textContent?.trim())
     );
 
     return {
