@@ -26,6 +26,12 @@ interface Flat {
   description?: { title: string; text: string }[];
   room_size?: number;
   rent: number;
+  rent_details?: {
+    rent: number;
+    utility: number;
+    additional_costs: number | "n.a.";
+    deposit: number;
+  };
 }
 
 const find_h3_section = (selector: Selector, sectionName: string): Selector => {
@@ -64,6 +70,15 @@ const assert_regex = (
 // parse a string of the form "123€" to the numeric value 123 or fail
 const parse_cost = (cost: string): number => {
   return parseInt(assert_regex(cost, /^([1-9][0-9]*)€$/, 1));
+};
+
+// like parse_cost but allows for null costs marked with the value "n.a."
+const parse_cost_na = (cost: string): number | "n.a." => {
+  if (cost === "n.a.") {
+    return "n.a.";
+  } else {
+    return parse_cost(cost);
+  }
 };
 
 const parse_flat = async (url: string): Promise<Flat> => {
@@ -111,6 +126,27 @@ const parse_flat = async (url: string): Promise<Flat> => {
       .map((s) => s.trim());
     const rent = parse_cost(rent_description);
 
+    // TODO enforce single element
+    const rent_tds = find_h3_section(sel, "Kosten")
+      .$("td:not(.noprint)")
+      .textContent()
+      .map((s) => s.trim());
+    if (
+      rent_tds.length !== 8 ||
+      !rent_tds[0].startsWith("Miete:") ||
+      !rent_tds[2].startsWith("Nebenkosten:") ||
+      !rent_tds[4].startsWith("Sonstige Kosten:") ||
+      !rent_tds[6].startsWith("Kaution:")
+    ) {
+      throw new Error("Malformed rent information table");
+    }
+    const rent_details = {
+      rent: parse_cost(rent_tds[1]),
+      utility: parse_cost(rent_tds[3]),
+      additional_costs: parse_cost_na(rent_tds[5]),
+      deposit: parse_cost(rent_tds[7]),
+    };
+
     const description = sel
       .$$("#ad_description_text div[id^=freitext_]")
       .map((chapter) => {
@@ -143,6 +179,7 @@ const parse_flat = async (url: string): Promise<Flat> => {
       description,
       room_size,
       rent,
+      rent_details,
     };
   });
 };
