@@ -33,6 +33,7 @@ interface Flat {
     deposit: number;
   };
   address: string;
+  property_details: string[];
 }
 
 const find_h3_section = (selector: Selector, sectionName: string): Selector => {
@@ -80,6 +81,30 @@ const parse_cost_na = (cost: string): number | "n.a." => {
   } else {
     return parse_cost(cost);
   }
+};
+
+// TODO cover property details in-depth (i.e. more than a list of tags)
+const parse_property_details = (details: Selector): string[] => {
+  const tags: string[] = [];
+
+  // TODO enforce single element
+  details.$$(".row > div:not(.noprint)").forEach((detail) => {
+    // e.g. <span class="glyphicons glyphicons-building noprint">
+    // TODO enforce single element
+    const [icon] = detail
+      .$("span")
+      .attribute("class")
+      .map((s) => s.replace(/^glyphicons | noprint$/g, ""));
+
+    // TODO enforce single element
+    const [description] = detail
+      .textContent()
+      .map((s) => s.trim().replace(/\s+/g, " "));
+
+    tags.push(description);
+  });
+
+  return tags;
 };
 
 const parse_flat = async (url: string): Promise<Flat> => {
@@ -155,6 +180,11 @@ const parse_flat = async (url: string): Promise<Flat> => {
       .map((s) => s.trim())
       .map((s) => s.replace(/\s+/g, " "));
 
+    // TODO enforce single element
+    const property_details = parse_property_details(
+      find_h3_section(sel, "Angaben zum Objekt")
+    );
+
     const description = sel
       .$$("#ad_description_text div[id^=freitext_]")
       .map((chapter) => {
@@ -189,6 +219,7 @@ const parse_flat = async (url: string): Promise<Flat> => {
       rent,
       rent_details,
       address,
+      property_details,
     };
   });
 };
