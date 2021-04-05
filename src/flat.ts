@@ -61,6 +61,11 @@ const assert_regex = (
   return match[group];
 };
 
+// parse a string of the form "123€" to the numeric value 123 or fail
+const parse_cost = (cost: string): number => {
+  return parseInt(assert_regex(cost, /^([1-9][0-9]*)€$/, 1));
+};
+
 const parse_flat = async (url: string): Promise<Flat> => {
   return await selectorFromURL(url, (sel) => {
     const contact = sel.$("div.rhs_contact_information > div.panel-body");
@@ -104,9 +109,7 @@ const parse_flat = async (url: string): Promise<Flat> => {
       .$("h2")
       .textContent()
       .map((s) => s.trim());
-    const rent = parseInt(
-      assert_regex(rent_description, /^([1-9][0-9]*)€$/, 1)
-    );
+    const rent = parse_cost(rent_description);
 
     const description = sel
       .$$("#ad_description_text div[id^=freitext_]")
