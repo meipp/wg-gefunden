@@ -101,7 +101,7 @@ const main = async () => {
     throw err;
   });
 
-  const cities = Object.assign({}, idx, ...idxs)
+  const cities = Object.assign({}, idx, ...idxs);
   console.log(JSON.stringify(Object.values(cities), null, 2));
 };
 
