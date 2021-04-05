@@ -28,7 +28,7 @@ interface Flat {
   rent: number;
   rent_details?: {
     rent: number;
-    utility: number;
+    utility: number | "n.a.";
     additional_costs: number | "n.a.";
     deposit: number;
   };
@@ -168,7 +168,7 @@ const parse_flat = async (url: string): Promise<Flat> => {
     }
     const rent_details = {
       rent: parse_cost(rent_tds[1]),
-      utility: parse_cost(rent_tds[3]),
+      utility: parse_cost_na(rent_tds[3]),
       additional_costs: parse_cost_na(rent_tds[5]),
       deposit: parse_cost(rent_tds[7]),
     };
