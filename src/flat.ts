@@ -33,7 +33,7 @@ const find_h3_section = (selector: Selector, sectionName: string): Selector => {
     .filter((e) => e.textContent?.trim() === sectionName);
   if (!h3.existsOnce()) {
     throw new Error(
-      "Malformed document: Section ${sectionName} does not exist exactly once"
+      `Malformed document: Section ${sectionName} does not exist exactly once`
     );
   }
   const section = h3.elements()[0].parentElement;
@@ -51,10 +51,10 @@ const assert_regex = (
 ): string => {
   const match = string.match(regex);
   if (!match) {
-    throw new Error("String ${string} does not match ${regex}");
+    throw new Error(`String ${string} does not match ${regex}`);
   }
   if (match[group] === undefined) {
-    throw new Error("No match group ${group}");
+    throw new Error(`No match group ${group}`);
   }
 
   return match[group];
