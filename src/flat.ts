@@ -25,6 +25,7 @@ interface Flat {
   title_image?: string;
   description?: { title: string; text: string }[];
   room_size?: number;
+  rent: number;
 }
 
 const find_h3_section = (selector: Selector, sectionName: string): Selector => {
@@ -98,6 +99,15 @@ const parse_flat = async (url: string): Promise<Flat> => {
       assert_regex(room_size_description, /^([1-9][0-9]*)m²$/, 1)
     );
 
+    // TODO enforce single element
+    const [rent_description] = find_h3_section(sel, "Gesamtmiete")
+      .$("h2")
+      .textContent()
+      .map((s) => s.trim());
+    const rent = parseInt(
+      assert_regex(rent_description, /^([1-9][0-9]*)€$/, 1)
+    );
+
     const description = sel
       .$$("#ad_description_text div[id^=freitext_]")
       .map((chapter) => {
@@ -129,6 +139,7 @@ const parse_flat = async (url: string): Promise<Flat> => {
       title_image,
       description,
       room_size,
+      rent,
     };
   });
 };
