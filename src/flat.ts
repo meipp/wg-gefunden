@@ -32,6 +32,7 @@ interface Flat {
     additional_costs: number | "n.a.";
     deposit: number;
   };
+  address: string;
 }
 
 const find_h3_section = (selector: Selector, sectionName: string): Selector => {
@@ -147,6 +148,13 @@ const parse_flat = async (url: string): Promise<Flat> => {
       deposit: parse_cost(rent_tds[7]),
     };
 
+    // TODO enforce single element
+    const [address] = find_h3_section(sel, "Adresse")
+      .$("a")
+      .textContent()
+      .map((s) => s.trim())
+      .map((s) => s.replace(/\s+/g, " "));
+
     const description = sel
       .$$("#ad_description_text div[id^=freitext_]")
       .map((chapter) => {
@@ -180,6 +188,7 @@ const parse_flat = async (url: string): Promise<Flat> => {
       room_size,
       rent,
       rent_details,
+      address,
     };
   });
 };
