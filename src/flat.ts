@@ -97,6 +97,10 @@ const parse_availability = (div: Selector) => {
     throw new Error(`String ${av} does not match ${regex}`);
   }
 
+  if (!match[1] || !match[4]) {
+    throw new Error(`Malformed availability section ${av}`);
+  }
+
   return {
     from: match[1],
     to: match[3],
