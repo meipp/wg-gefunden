@@ -76,7 +76,7 @@ const assert_regex = (
 
 // parse a string of the form "123€" to the numeric value 123 or fail
 const parse_cost = (cost: string): number => {
-  return parseInt(assert_regex(cost, /^([0-9]*)€$/, 1));
+  return parseInt(assert_regex(cost, /^([0-9]*)€$/, 1), 10);
 };
 
 // like parse_cost but allows for null costs marked with the value "n.a."
@@ -163,7 +163,8 @@ const parse_flat = async (url: string): Promise<Flat> => {
       .textContent()
       .map((s) => s.trim());
     const room_size = parseInt(
-      assert_regex(room_size_description, /^([1-9][0-9]*)m²$/, 1)
+      assert_regex(room_size_description, /^([1-9][0-9]*)m²$/, 1),
+      10
     );
 
     // TODO enforce single element
