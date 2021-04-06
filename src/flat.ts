@@ -158,20 +158,16 @@ const parse_rent_details = (div: Selector) => {
 const parse_availability = (div: Selector) => {
   const av = div.$("div > p, div > b").textContent().join("\n");
 
-  const regex = /^\s*frei ab:\s*([0-9\.]+)\s+(frei bis:\s*([0-9\.]+))?\s+Online:\s*(\d+ (Sekunden?|Minuten?|Stunden?|Tage?)|([0-9\.]+))\s*$/;
-  const match = av.match(regex);
-  if (!match) {
-    throw new Error(`String ${av} does not match ${regex}`);
-  }
-
-  if (!match[1] || !match[4]) {
-    throw new Error(`Malformed availability section ${av}`);
-  }
+  const { from, _to, online } = regex(
+    /frei ab:\s*(?<from>[0-9\.]+)/,
+    /(frei bis:\s*(?<_to>[0-9\.]+))?/,
+    /Online:\s*(?<online>\d+ (Sekunden?|Minuten?|Stunden?|Tage?)|([0-9\.]+))/
+  )(av);
 
   return {
-    from: match[1],
-    to: match[3],
-    online: match[4],
+    from,
+    to: _to,
+    online,
   };
 };
 
