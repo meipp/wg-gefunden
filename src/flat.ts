@@ -203,9 +203,12 @@ const parse_flat = async (url: string): Promise<Flat> => {
     const [title] = headline.textContent().map((s) => s.trim());
     const flatmate_genders = headline.$("img").attribute("alt");
     // TODO enforce single element
-    const [title_image] = sel
+    let [title_image]: (string | undefined)[] = sel
       .$('meta[property="og:image"]')
       .attribute("content");
+    if (title_image === "https://img.wg-gesucht.de/") {
+      title_image = undefined;
+    }
 
     // TODO enforce single element
     const [room_size_description] = find_h3_section(sel, "Zimmergröße")
