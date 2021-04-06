@@ -59,7 +59,8 @@ interface Flat {
     rent: number;
     utility: number | "n.a.";
     additional_costs: number | "n.a.";
-    deposit: number;
+    deposit?: number;
+    ransom?: number;
   };
   address: string;
   availability: {
@@ -133,6 +134,25 @@ const parse_cost_na = (cost: string): number | "n.a." => {
   } else {
     return parse_cost(cost);
   }
+};
+
+const parse_rent_details = (div: Selector) => {
+  const text = div.$("td:not(.noprint)").textContent().join("\n");
+  const { rent, utility, additional_costs, _deposit, _ransom } = regex(
+    /Miete:\s*(?<rent>[0-9]+€)/,
+    /Nebenkosten:\s*\D*\s*(?<utility>[0-9]+€|n\.a\.)/,
+    /Sonstige Kosten:\s*(?<additional_costs>[0-9]+€|n\.a\.)/,
+    /(Kaution:\s*(?<_deposit>[0-9]+€))?/,
+    /(Ablösevereinbarung:\s*(?<_ransom>[0-9]+€|n\\.a\\.))?/
+  )(text);
+
+  return {
+    rent: parse_cost(rent),
+    utility: parse_cost_na(utility),
+    additional_costs: parse_cost_na(additional_costs),
+    deposit: _deposit === undefined ? undefined : parse_cost(_deposit),
+    ransom: _ransom === undefined ? undefined : parse_cost(_ransom),
+  };
 };
 
 const parse_availability = (div: Selector) => {
@@ -257,25 +277,7 @@ const parse_flat = async (url: string): Promise<Flat> => {
     const rent = parse_cost(rent_description);
 
     // TODO enforce single element
-    const rent_tds = find_h3_section(sel, "Kosten")
-      .$("td:not(.noprint)")
-      .textContent()
-      .map((s) => s.trim());
-    if (
-      rent_tds.length !== 8 ||
-      !rent_tds[0].startsWith("Miete:") ||
-      !rent_tds[2].startsWith("Nebenkosten:") ||
-      !rent_tds[4].startsWith("Sonstige Kosten:") ||
-      !rent_tds[6].startsWith("Kaution:")
-    ) {
-      throw new Error("Malformed rent information table");
-    }
-    const rent_details = {
-      rent: parse_cost(rent_tds[1]),
-      utility: parse_cost_na(rent_tds[3]),
-      additional_costs: parse_cost_na(rent_tds[5]),
-      deposit: parse_cost(rent_tds[7]),
-    };
+    const rent_details = parse_rent_details(find_h3_section(sel, "Kosten"));
 
     // TODO enforce single element
     const [address] = find_h3_section(sel, "Adresse")
