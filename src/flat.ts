@@ -38,6 +38,10 @@ interface Flat {
     to?: string;
     online: string;
   };
+  flatshare_details: {
+    details: string[];
+    looking_for: string;
+  };
   property_details: string[];
 }
 
@@ -119,6 +123,36 @@ const parse_availability = (div: Selector) => {
     from: match[1],
     to: match[3],
     online: match[4],
+  };
+};
+
+const parse_flatshare_details = (div: Selector) => {
+  const details = div.$$("h4, ul");
+  if (
+    details.length !== 4 ||
+    details[0].textContent().join("\n").trim() !== "Die WG" ||
+    details[2].textContent().join("\n").trim() !== "Gesucht wird"
+  ) {
+    throw new Error("Malformed document");
+  }
+
+  // TODO enforce single element
+  const [looking_for] = details[3]
+    .$("li")
+    .textContent()
+    .map((s) => s.trim())
+    .map((s) => s.replace(/\s+/g, " "));
+
+  console.log();
+
+  return {
+    details: details[1]
+      .$("li")
+      .textContent()
+      .map((s) => s.trim())
+      .map((s) => s.replace(/\s+/g, " "))
+      .filter((s) => s !== ""),
+    looking_for,
   };
 };
 
@@ -224,6 +258,11 @@ const parse_flat = async (url: string): Promise<Flat> => {
     );
 
     // TODO enforce single element
+    const flatshare_details = parse_flatshare_details(
+      find_h3_section(sel, "WG-Details", 2)
+    );
+
+    // TODO enforce single element
     const property_details = parse_property_details(
       find_h3_section(sel, "Angaben zum Objekt")
     );
@@ -265,6 +304,7 @@ const parse_flat = async (url: string): Promise<Flat> => {
       rent_details,
       address,
       availability,
+      flatshare_details,
       property_details,
     };
   });
