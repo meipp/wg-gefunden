@@ -146,8 +146,6 @@ const parse_flat = async (url: string): Promise<Flat> => {
     const phone_number = contact.$("#left_column_show_phone_numbers").exists();
     const online_tour = contact.$(".online_tour_badge").exists();
 
-    // console.log(contact.$(".col-md-8").textContent());
-
     const headline = sel.$("#sliderTopTitle");
     // TODO enforce single element
     const [title] = headline.textContent().map((s) => s.trim());
