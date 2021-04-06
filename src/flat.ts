@@ -287,13 +287,30 @@ const parse_flat = async (url: string): Promise<Flat> => {
         return { title, text };
       });
 
-    // Sections
-    console.log(
-      "Found sections:",
-      sel
-        .$(":not([id^=freitext_]) > h3:not(.truncate_title)")
-        .map((e) => e.textContent?.trim())
-    );
+    // Perform a check of all sections in the document against covered_or_ignored_sections
+    // This is an approach at offensive programming and is meant to assist in understanding
+    // the schmema of wg-gesucht in the future
+    const covered_or_ignored_sections = [
+      "Zimmergröße",
+      "Gesamtmiete",
+      "Kosten",
+      "Adresse",
+      "Verfügbarkeit",
+      "WG-Details",
+      "Angaben zum Objekt",
+      "Karte", // ignored
+      "Kontakt", // ignored
+      "", // ignored - this occurs for ads without photos
+    ];
+    const sections = sel
+      .$(":not([id^=freitext_]) > h3:not(.truncate_title)")
+      .textContent()
+      .map((s) => s.trim())
+      .forEach((section) => {
+        if (!covered_or_ignored_sections.includes(section)) {
+          throw new Error(`Encountered unknown section '${section}'`);
+        }
+      });
 
     return {
       url,
