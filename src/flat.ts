@@ -33,6 +33,11 @@ interface Flat {
     deposit: number;
   };
   address: string;
+  availability: {
+    from: string;
+    to?: string;
+    online: string;
+  };
   property_details: string[];
 }
 
@@ -81,6 +86,22 @@ const parse_cost_na = (cost: string): number | "n.a." => {
   } else {
     return parse_cost(cost);
   }
+};
+
+const parse_availability = (div: Selector) => {
+  const av = div.$("div > p, div > b").textContent().join("\n");
+
+  const regex = /\s*frei ab:\s*([0-9\.]+)\s+(frei bis:\s*([0-9\.]+))?\s+Online:\s*(\d+ (Sekunden?|Minuten?|Stunden?|Tage?)|([0-9\.]+))\s*/;
+  const match = av.match(regex);
+  if (!match) {
+    throw new Error(`String ${av} does not match ${regex}`);
+  }
+
+  return {
+    from: match[1],
+    to: match[3],
+    online: match[4],
+  };
 };
 
 // TODO cover property details in-depth (i.e. more than a list of tags)
@@ -181,6 +202,11 @@ const parse_flat = async (url: string): Promise<Flat> => {
       .map((s) => s.replace(/\s+/g, " "));
 
     // TODO enforce single element
+    const availability = parse_availability(
+      find_h3_section(sel, "Verfügbarkeit")
+    );
+
+    // TODO enforce single element
     const property_details = parse_property_details(
       find_h3_section(sel, "Angaben zum Objekt")
     );
@@ -221,6 +247,7 @@ const parse_flat = async (url: string): Promise<Flat> => {
       rent,
       rent_details,
       address,
+      availability,
       property_details,
     };
   });
