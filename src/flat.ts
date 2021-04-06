@@ -158,7 +158,7 @@ const parse_rent_details = (div: Selector) => {
 const parse_availability = (div: Selector) => {
   const av = div.$("div > p, div > b").textContent().join("\n");
 
-  const regex = /\s*frei ab:\s*([0-9\.]+)\s+(frei bis:\s*([0-9\.]+))?\s+Online:\s*(\d+ (Sekunden?|Minuten?|Stunden?|Tage?)|([0-9\.]+))\s*/;
+  const regex = /^\s*frei ab:\s*([0-9\.]+)\s+(frei bis:\s*([0-9\.]+))?\s+Online:\s*(\d+ (Sekunden?|Minuten?|Stunden?|Tage?)|([0-9\.]+))\s*$/;
   const match = av.match(regex);
   if (!match) {
     throw new Error(`String ${av} does not match ${regex}`);
