@@ -41,7 +41,11 @@ interface Flat {
   property_details: string[];
 }
 
-const find_h3_section = (selector: Selector, sectionName: string): Selector => {
+const find_h3_section = (
+  selector: Selector,
+  sectionName: string,
+  climb: number = 1
+): Selector => {
   const h3 = selector
     .$("h3:not(.truncate_title)")
     .filter((e) => e.textContent?.trim() === sectionName);
@@ -50,12 +54,22 @@ const find_h3_section = (selector: Selector, sectionName: string): Selector => {
       `Malformed document: Section ${sectionName} does not exist exactly once`
     );
   }
-  const section = h3.elements()[0].parentElement;
-  if (!section) {
-    throw new Error("Malformed document: h3 tag has no parent element");
+  let section = h3.elements()[0];
+  if (climb === 0) {
+    return Selector.from(section.outerHTML);
   }
 
-  return Selector.from(section.outerHTML);
+  let ancestor = section.parentElement;
+  if (!ancestor) {
+    throw new Error("Malformed document: h3 tag has no parent element");
+  }
+  for (let i = 1; i < climb; i++) {
+    ancestor = ancestor.parentElement;
+    if (!ancestor) {
+      throw new Error("Malformed document: h3 tag has no parent element");
+    }
+  }
+  return Selector.from(ancestor.outerHTML);
 };
 
 const assert_regex = (
