@@ -27,8 +27,7 @@ const discover_federal_state = async (state_url: string) => {
   return selectorFromURL(state_url, (sel) => {
     const index: any = {};
 
-    //TODO enforce existence of exactly one element
-    const [h1] = sel.$("h1").textContent();
+    const h1 = sel.$("h1").single().textContent();
     const state = h1.match(/^Leben und Wohnen in (.+)$/)?.[1] || null;
 
     const links = sel
