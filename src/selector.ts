@@ -63,8 +63,8 @@ class Selector {
     return new Selector(concat(this.selection.map((e) => select(e, selector))));
   }
 
-  public $$(selector: string): Selector[] {
-    return this.$(selector).map((e) => new Selector([e]));
+  public $$(selector: string): SingleSelector[] {
+    return this.$(selector).map((e) => new SingleSelector(e));
   }
 
   public attribute(attribute: string): string[] {

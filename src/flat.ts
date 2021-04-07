@@ -175,8 +175,8 @@ const parse_flatshare_details = (div: Selector) => {
   const details = div.$$("h4, ul");
   if (
     details.length !== 4 ||
-    details[0].textContent().join("\n").trim() !== "Die WG" ||
-    details[2].textContent().join("\n").trim() !== "Gesucht wird"
+    details[0].textContent().trim() !== "Die WG" ||
+    details[2].textContent().trim() !== "Gesucht wird"
   ) {
     throw new Error("Malformed document");
   }
@@ -214,10 +214,7 @@ const parse_property_details = (details: Selector): string[] => {
       .attribute("class")
       .map((s) => s.replace(/^glyphicons | noprint$/g, ""));
 
-    // TODO enforce single element
-    const [description] = detail
-      .textContent()
-      .map((s) => s.trim().replace(/\s+/g, " "));
+    const description = detail.textContent().trim().replace(/\s+/g, " ");
 
     tags.push(description);
   });
