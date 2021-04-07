@@ -1,8 +1,5 @@
 import { JSDOM } from "jsdom";
-
-const concat = <A>(as: A[][]): A[] => {
-  return ([] as A[]).concat(...as);
-};
+import { concat } from "./util";
 
 const select = (element: Element, selector: string): Element[] => {
   return Array.from(element.querySelectorAll(selector));
