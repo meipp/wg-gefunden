@@ -27,10 +27,7 @@ const regex = (...expressions: RegExp[]) => {
     if (!match) {
       throw new Error(`String '${string}' did not match ${regex}`);
     }
-    const groups = match.groups;
-    if (!groups) {
-      throw new Error("Match object has no member 'groups'");
-    }
+    const groups = match.groups || {};
     for (const key of Object.keys(groups)) {
       if (!key.startsWith("_") && groups[key] === undefined) {
         throw new Error(`Group '${key}' may not be undefined`);
