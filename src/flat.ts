@@ -32,7 +32,6 @@ const regex = (...expressions: RegExp[]) => {
       throw new Error("Match object has no member 'groups'");
     }
     for (const key of Object.keys(groups)) {
-      console.log(key);
       if (!key.startsWith("_") && groups[key] === undefined) {
         throw new Error(`Group '${key}' may not be undefined`);
       }
@@ -183,8 +182,6 @@ const parse_flatshare_details = (div: SingleSelector) => {
     .textContent()
     .trim()
     .replace(/\s+/g, " ");
-
-  console.log();
 
   return {
     details: details[1]
