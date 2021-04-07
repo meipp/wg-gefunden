@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Selector } from "./selector";
+import { Selector, SingleSelector } from "./selector";
 
 const selectorFromURL = async <A>(
   url: string,
@@ -52,7 +52,7 @@ interface Flat {
   title?: string;
   flatmate_genders?: string[];
   title_image?: string;
-  description?: { title: string; text: string }[];
+  description?: { title?: string; text: string }[];
   room_size?: number;
   rent: number;
   rent_details?: {
@@ -79,14 +79,14 @@ const find_h3_section = (
   selector: Selector,
   sectionName: string,
   climb: number = 1
-): Selector => {
+): SingleSelector => {
   const h3 = selector
     .$("h3:not(.truncate_title)")
     .filter((e) => e.textContent?.trim() === sectionName)
     .single();
   let section = h3.element();
   if (climb === 0) {
-    return Selector.from(section.outerHTML);
+    return Selector.from(section.outerHTML).single();
   }
 
   let ancestor = section.parentElement;
@@ -99,7 +99,7 @@ const find_h3_section = (
       throw new Error("Malformed document: h3 tag has no parent element");
     }
   }
-  return Selector.from(ancestor.outerHTML);
+  return Selector.from(ancestor.outerHTML).single();
 };
 
 const assert_regex = (
@@ -132,7 +132,7 @@ const parse_cost_na = (cost: string): number | "n.a." => {
   }
 };
 
-const parse_rent_details = (div: Selector) => {
+const parse_rent_details = (div: SingleSelector) => {
   const text = div.$("td:not(.noprint)").textContent().join("\n");
   const { rent, utility, additional_costs, _deposit, _ransom } = regex(
     /Miete:\s*(?<rent>[0-9]+€)/,
@@ -151,7 +151,7 @@ const parse_rent_details = (div: Selector) => {
   };
 };
 
-const parse_availability = (div: Selector) => {
+const parse_availability = (div: SingleSelector) => {
   const av = div.$("div > p, div > b").textContent().join("\n");
 
   const { from, _to, online } = regex(
@@ -167,7 +167,7 @@ const parse_availability = (div: Selector) => {
   };
 };
 
-const parse_flatshare_details = (div: Selector) => {
+const parse_flatshare_details = (div: SingleSelector) => {
   const details = div.$$("h4, ul");
   if (
     details.length !== 4 ||
@@ -177,12 +177,12 @@ const parse_flatshare_details = (div: Selector) => {
     throw new Error("Malformed document");
   }
 
-  // TODO enforce single element
-  const [looking_for] = details[3]
+  const looking_for = details[3]
     .$("li")
+    .single()
     .textContent()
-    .map((s) => s.trim())
-    .map((s) => s.replace(/\s+/g, " "));
+    .trim()
+    .replace(/\s+/g, " ");
 
   console.log();
 
@@ -198,17 +198,16 @@ const parse_flatshare_details = (div: Selector) => {
 };
 
 // TODO cover property details in-depth (i.e. more than a list of tags)
-const parse_property_details = (details: Selector): string[] => {
+const parse_property_details = (details: SingleSelector): string[] => {
   const tags: string[] = [];
 
-  // TODO enforce single element
   details.$$(".row > div:not(.noprint)").forEach((detail) => {
     // e.g. <span class="glyphicons glyphicons-building noprint">
-    // TODO enforce single element
-    const [icon] = detail
+    const icon = detail
       .$("span")
+      .single()
       .attribute("class")
-      .map((s) => s.replace(/^glyphicons | noprint$/g, ""));
+      .replace(/^glyphicons | noprint$/g, "");
 
     const description = detail.textContent().trim().replace(/\s+/g, " ");
 
@@ -221,71 +220,66 @@ const parse_property_details = (details: Selector): string[] => {
 const parse_flat = async (url: string): Promise<Flat> => {
   return await selectorFromURL(url, (sel) => {
     const contact = sel.$("div.rhs_contact_information > div.panel-body");
-    // TODO enforce single element
     let profile_image: string | undefined = undefined;
-    const [style] = contact
+    const style = contact
+      .single()
       .$("div.profile_image_dav.cursor-pointer")
+      .single()
       .attribute("style");
     if (style) {
       profile_image = style.match(/background-image: url\('(.*)'\)/)?.[1];
     }
 
-    // TODO enforce single element
-    const [name_image] = contact.$("img").attribute("src");
+    const name_image = contact.$("img").single().attribute("src");
 
     const phone_number = contact.$("#left_column_show_phone_numbers").exists();
     const online_tour = contact.$(".online_tour_badge").exists();
 
     const headline = sel.$("#sliderTopTitle");
-    // TODO enforce single element
-    const [title] = headline.textContent().map((s) => s.trim());
+    const title = headline.single().textContent().trim();
     const flatmate_genders = headline.$("img").attribute("alt");
-    // TODO enforce single element
-    let [title_image]: (string | undefined)[] = sel
+    let title_image: string | undefined = sel
       .$('meta[property="og:image"]')
+      .single()
       .attribute("content");
     if (title_image === "https://img.wg-gesucht.de/") {
       title_image = undefined;
     }
 
-    // TODO enforce single element
-    const [room_size_description] = find_h3_section(sel, "Zimmergröße")
+    const room_size_description = find_h3_section(sel, "Zimmergröße")
       .$("h2")
+      .single()
       .textContent()
-      .map((s) => s.trim());
+      .trim();
     const room_size = parseInt(
       assert_regex(room_size_description, /^([1-9][0-9]*)m²$/, 1),
       10
     );
 
-    // TODO enforce single element
-    const [rent_description] = find_h3_section(sel, "Gesamtmiete")
+    const rent_description = find_h3_section(sel, "Gesamtmiete")
       .$("h2")
+      .single()
       .textContent()
-      .map((s) => s.trim());
+      .trim();
     const rent = parse_cost(rent_description);
 
-    // TODO enforce single element
     const rent_details = parse_rent_details(find_h3_section(sel, "Kosten"));
 
-    // TODO enforce single element
-    const [address] = find_h3_section(sel, "Adresse")
-      .$("a")
+    const address = find_h3_section(sel, "Adresse")
+      .$('a[href="#mapContainer"]')
+      .single()
       .textContent()
-      .map((s) => s.trim())
-      .map((s) => s.replace(/\s+/g, " "));
+      .trim()
+      .replace(/\s+/g, " ");
 
-    // TODO enforce single element
     const availability = parse_availability(
       find_h3_section(sel, "Verfügbarkeit")
     );
 
-    // TODO enforce single element
     const flatshare_details = parse_flatshare_details(
       find_h3_section(sel, "WG-Details", 2)
     );
 
-    // TODO enforce single element
     const property_details = parse_property_details(
       find_h3_section(sel, "Angaben zum Objekt")
     );
@@ -293,16 +287,13 @@ const parse_flat = async (url: string): Promise<Flat> => {
     const description = sel
       .$$("#ad_description_text div[id^=freitext_]")
       .map((chapter) => {
-        // TODO enforce single element
-        const [title] = chapter
-          .$("h3")
-          .textContent()
-          .map((s) => s.trim());
-        // TODO enforce single element
-        const [text] = chapter
-          .$("p")
-          .textContent()
-          .map((s) => s.trim());
+        // TODO keep in mind that some ads don't have titles in their description
+        let title: string | undefined = undefined;
+        if (chapter.$("h3").exists()) {
+          title = chapter.$("h3").single().textContent().trim();
+        }
+
+        const text = chapter.$("p").single().textContent().trim();
 
         return { title, text };
       });
