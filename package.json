@@ -10,7 +10,8 @@
     "dev2": "nodemon --exec ts-node src/index.ts",
     "watch": "tsc -w",
     "build-city-index": "ts-node src/build-city-index.ts",
-    "test-flat": "ts-node src/flat.ts"
+    "test-flat": "ts-node src/flat.ts",
+    "test-goe": "npm run test-flat https://www.wg-gesucht.de/wg-zimmer-in-Goettingen-Nordstadt.8562841.html"
   },
   "keywords": [],
   "author": "",
