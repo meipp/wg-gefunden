@@ -8,23 +8,30 @@ const select = (element: Element, selector: string): Element[] => {
   return Array.from(element.querySelectorAll(selector));
 };
 
-const unsafeGetAttribute = (element: Element, attribute: string): string => {
+const unsafeGetAttribute = (
+  element: Element,
+  attribute: string,
+  selection_history: string[]
+): string => {
   if (element.hasAttribute(attribute)) {
     return element.getAttribute(attribute)!;
   } else {
-    throw new Error(`Element has no attribute '${attribute}'`);
+    throw error(`Element has no attribute '${attribute}'`, selection_history);
   }
 };
 
-const unsafeGetTextContent = (element: Element): string => {
+const unsafeGetTextContent = (
+  element: Element,
+  selection_history: string[]
+): string => {
   if (element.textContent === null) {
-    throw new Error("Element has no text content");
+    throw error("Element has no text content", selection_history);
   } else {
     return element.textContent;
   }
 };
 
-const getJSON = (element: Element): any => {
+const getJSON = (element: Element, selection_history: string[]): any => {
   const object: any = {};
   for (const attribute of element.getAttributeNames()) {
     object[attribute] = element.getAttribute(attribute);
@@ -32,7 +39,7 @@ const getJSON = (element: Element): any => {
   object["tagName"] = element.tagName;
   object["innerHTML"] = element.innerHTML;
   object["outerHTML"] = element.outerHTML;
-  object["textContent"] = unsafeGetTextContent(element);
+  object["textContent"] = unsafeGetTextContent(element, selection_history);
 
   if (element.hasAttribute("class")) {
     object["class"] = Array.from(element.classList);
@@ -41,11 +48,17 @@ const getJSON = (element: Element): any => {
   return object;
 };
 
+const error = (message: string, selection_history: string[]) => {
+  return new Error(`Selection [${selection_history.join(" | ")}]: ${message}`);
+};
+
 class Selector {
   private readonly selection: Element[];
+  private readonly selection_history: string[];
 
-  public constructor(selection: Element[]) {
+  public constructor(selection: Element[], selection_history: string[]) {
     this.selection = selection;
+    this.selection_history = selection_history;
   }
 
   public static from(html: string): Selector {
@@ -56,23 +69,30 @@ class Selector {
       throw new Error("Document has no root element");
     }
 
-    return new Selector([rootElement]);
+    return new Selector([rootElement], []);
   }
 
   public $(selector: string): Selector {
-    return new Selector(concat(this.selection.map((e) => select(e, selector))));
+    return new Selector(
+      concat(this.selection.map((e) => select(e, selector))),
+      this.selection_history.concat([selector])
+    );
   }
 
   public $$(selector: string): SingleSelector[] {
-    return this.$(selector).map((e) => new SingleSelector(e));
+    return this.$(selector).map(
+      (e) => new SingleSelector(e, this.selection_history.concat([selector]))
+    );
   }
 
   public attribute(attribute: string): string[] {
-    return this.map((e) => unsafeGetAttribute(e, attribute));
+    return this.map((e) =>
+      unsafeGetAttribute(e, attribute, this.selection_history)
+    );
   }
 
   public textContent(): string[] {
-    return this.map((e) => unsafeGetTextContent(e));
+    return this.map((e) => unsafeGetTextContent(e, this.selection_history));
   }
 
   public innerHTML(): string[] {
@@ -84,7 +104,7 @@ class Selector {
   }
 
   public json(): object[] {
-    return this.map((e) => getJSON(e));
+    return this.map((e) => getJSON(e, this.selection_history));
   }
 
   public elements(): Element[] {
@@ -101,10 +121,10 @@ class Selector {
 
   public single(): SingleSelector {
     if (this.selection.length !== 1) {
-      throw new Error("Selection does not have exactly one element");
+      throw error("Does not have exactly one element", this.selection_history);
     }
     const [e] = this.selection;
-    return new SingleSelector(e);
+    return new SingleSelector(e, this.selection_history);
   }
 
   public map<A>(f: (_: Element) => A): A[] {
@@ -112,7 +132,10 @@ class Selector {
   }
 
   public filter(p: (_: Element) => boolean): Selector {
-    return new Selector(this.selection.filter(p));
+    return new Selector(
+      this.selection.filter(p),
+      this.selection_history.concat(["call to filter()"])
+    );
   }
 
   public forEach(action: (_: Element) => void): Selector {
@@ -125,25 +148,36 @@ class Selector {
 // All A[] return values from Selector therefore are A for SingleSelector
 class SingleSelector {
   private readonly selection: Element;
+  private readonly selection_history: string[];
 
-  public constructor(selection: Element) {
+  public constructor(selection: Element, selection_history: string[]) {
     this.selection = selection;
+    this.selection_history = selection_history;
   }
 
   public $(selector: string): Selector {
-    return new Selector(select(this.selection, selector));
+    return new Selector(
+      select(this.selection, selector),
+      this.selection_history.concat([selector])
+    );
   }
 
   public $$(selector: string): SingleSelector[] {
-    return this.$(selector).map((e) => new SingleSelector(e));
+    return this.$(selector).map(
+      (e) => new SingleSelector(e, this.selection_history.concat([selector]))
+    );
   }
 
   public attribute(attribute: string): string {
-    return unsafeGetAttribute(this.selection, attribute);
+    return unsafeGetAttribute(
+      this.selection,
+      attribute,
+      this.selection_history
+    );
   }
 
   public textContent(): string {
-    return unsafeGetTextContent(this.selection);
+    return unsafeGetTextContent(this.selection, this.selection_history);
   }
 
   public innerHTML(): string {
@@ -155,7 +189,7 @@ class SingleSelector {
   }
 
   public json(): object {
-    return getJSON(this.selection);
+    return getJSON(this.selection, this.selection_history);
   }
 
   public element(): Element {
@@ -167,7 +201,10 @@ class SingleSelector {
   }
 
   public filter(p: (_: Element) => boolean): Selector {
-    return new Selector([this.selection].filter(p));
+    return new Selector(
+      [this.selection].filter(p),
+      this.selection_history.concat(["call to filter()"])
+    );
   }
 
   public forEach(action: (_: Element) => void): SingleSelector {
