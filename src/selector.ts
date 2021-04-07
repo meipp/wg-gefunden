@@ -44,7 +44,7 @@ const getJSON = (element: Element): any => {
 class Selector {
   private readonly selection: Element[];
 
-  private constructor(selection: Element[]) {
+  public constructor(selection: Element[]) {
     this.selection = selection;
   }
 
@@ -99,6 +99,14 @@ class Selector {
     return this.selection.length === 1;
   }
 
+  public single(): SingleSelector {
+    if (this.selection.length !== 1) {
+      throw new Error("Selection does not have exactly one element");
+    }
+    const [e] = this.selection;
+    return new SingleSelector(e);
+  }
+
   public map<A>(f: (_: Element) => A): A[] {
     return this.selection.map(f);
   }
@@ -113,6 +121,61 @@ class Selector {
   }
 }
 
-export { Selector };
+// Like Selector, but is ensured to carry only one element
+// All A[] return values from Selector therefore are A for SingleSelector
+class SingleSelector {
+  private readonly selection: Element;
+
+  public constructor(selection: Element) {
+    this.selection = selection;
+  }
+
+  public $(selector: string): Selector {
+    return new Selector(select(this.selection, selector));
+  }
+
+  public $$(selector: string): SingleSelector[] {
+    return this.$(selector).map((e) => new SingleSelector(e));
+  }
+
+  public attribute(attribute: string): string {
+    return unsafeGetAttribute(this.selection, attribute);
+  }
+
+  public textContent(): string {
+    return unsafeGetTextContent(this.selection);
+  }
+
+  public innerHTML(): string {
+    return this.selection.innerHTML;
+  }
+
+  public outerHTML(): string {
+    return this.selection.outerHTML;
+  }
+
+  public json(): object {
+    return getJSON(this.selection);
+  }
+
+  public element(): Element {
+    return this.selection;
+  }
+
+  public map<A>(f: (_: Element) => A): A {
+    return f(this.selection);
+  }
+
+  public filter(p: (_: Element) => boolean): Selector {
+    return new Selector([this.selection].filter(p));
+  }
+
+  public forEach(action: (_: Element) => void): SingleSelector {
+    action(this.selection);
+    return this;
+  }
+}
+
+export { Selector, SingleSelector };
 
 // TODO selection history for more detailed error messages
