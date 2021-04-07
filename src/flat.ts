@@ -82,13 +82,9 @@ const find_h3_section = (
 ): Selector => {
   const h3 = selector
     .$("h3:not(.truncate_title)")
-    .filter((e) => e.textContent?.trim() === sectionName);
-  if (!h3.existsOnce()) {
-    throw new Error(
-      `Malformed document: Section ${sectionName} does not exist exactly once`
-    );
-  }
-  let section = h3.elements()[0];
+    .filter((e) => e.textContent?.trim() === sectionName)
+    .single();
+  let section = h3.element();
   if (climb === 0) {
     return Selector.from(section.outerHTML);
   }
