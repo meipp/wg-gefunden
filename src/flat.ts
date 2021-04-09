@@ -158,7 +158,7 @@ const parse_property_details = (details: SingleSelector): string[] => {
   details.$$(".row > div:not(.noprint)").forEach((detail) => {
     // e.g. <span class="glyphicons glyphicons-building noprint">
     const icon = detail
-      .$("span")
+      .$("span:not(.glyphicon-info-sign)")
       .single()
       .attribute("class")
       .replace(/^glyphicons | noprint$/g, "");
