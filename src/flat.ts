@@ -1,17 +1,6 @@
-import axios from "axios";
 import { assert_regex, regex } from "./regex";
 import { Selector, SingleSelector } from "./selector";
-
-const selectorFromURL = async <A>(
-  url: string,
-  callback: (data: Selector) => A
-): Promise<A> => {
-  const { status, statusText, data } = await axios.get(url);
-  if (status !== 200) {
-    throw new Error(`Request failed with status code ${status}: ${statusText}`);
-  }
-  return callback(Selector.from(data));
-};
+import { selectorFromURL } from "./util";
 
 interface Flat {
   url: string;
@@ -171,7 +160,7 @@ const parse_property_details = (details: SingleSelector): string[] => {
   return tags;
 };
 
-const parse_flat = async (url: string): Promise<Flat> => {
+const parse_flat = async (url: string): Promise<Flat | "captcha"> => {
   return await selectorFromURL(url, (sel) => {
     const contact = sel.$("div.rhs_contact_information > div.panel-body");
     let profile_image: string | undefined = undefined;

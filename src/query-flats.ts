@@ -1,23 +1,12 @@
-import axios from "axios";
 import { uniq } from "lodash";
 import { assert_regex } from "./regex";
-import { Selector } from "./selector";
-import { concat } from "./util";
-
-const selectorFromURL = async <A>(
-  url: string,
-  callback: (data: Selector) => A
-): Promise<A> => {
-  const { status, statusText, data } = await axios.get(url);
-  if (status !== 200) {
-    throw new Error(`Request failed with status code ${status}: ${statusText}`);
-  }
-  return callback(Selector.from(data));
-};
+import { selectorFromURL, sleep } from "./util";
 
 // For some reason it is not possible to generate query urls with specific page numbers in them.
 // Hence, querying is done linearly by pressing the "next page" button each time.
-const query_ads_linearly = async (query_url: string): Promise<string[]> => {
+const query_ads_linearly = async (
+  query_url: string
+): Promise<string[] | "captcha"> => {
   return await selectorFromURL(query_url, async (sel) => {
     // If there is only one page, the pagination bar will be omitted
     // and Math.max() would be called with zero arguments.
@@ -59,7 +48,13 @@ const query_ads_linearly = async (query_url: string): Promise<string[]> => {
       .map((href) => `https://www.wg-gesucht.de/${href}`);
 
     return ads.concat(
-      ...(await Promise.all(next_page.map(query_ads_linearly)))
+      ...(await Promise.all(
+        next_page.map(async (url) => {
+          console.log("Sleeping for 30 seconds to avoid captcha");
+          await sleep(30);
+          return query_ads_linearly(url);
+        })
+      ))
     );
   });
 };
