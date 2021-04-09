@@ -2,6 +2,10 @@ import { uniq } from "lodash";
 import { assert_regex } from "./regex";
 import { selectorFromURL, sleep } from "./util";
 
+// Number of seconds between each request
+// Used to avoid bot detection/captcha
+const time_between_requests = 30
+
 // For some reason it is not possible to generate query urls with specific page numbers in them.
 // Hence, querying is done linearly by pressing the "next page" button each time.
 const query_ads_linearly = async (
@@ -50,8 +54,8 @@ const query_ads_linearly = async (
     return ads.concat(
       ...(await Promise.all(
         next_page.map(async (url) => {
-          console.log("Sleeping for 30 seconds to avoid captcha");
-          await sleep(30);
+          console.log(`Sleeping for ${time_between_requests} seconds to avoid captcha`);
+          await sleep(time_between_requests);
           return query_ads_linearly(url);
         })
       ))
