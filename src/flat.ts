@@ -295,14 +295,4 @@ const parse_flat = async (url: string): Promise<Flat> => {
   });
 };
 
-const main = async () => {
-  const [_, __, url] = process.argv;
-  if (!url) {
-    throw new Error("URL required");
-  }
-
-  const flat = await parse_flat(url);
-  console.log(flat);
-};
-
-main();
+export { Flat, parse_flat };
