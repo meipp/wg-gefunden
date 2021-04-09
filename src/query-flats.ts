@@ -1,4 +1,5 @@
 import { uniq } from "lodash";
+import { Flat, parse_flat } from "./flat";
 import { assert_regex } from "./regex";
 import { selectorFromURL, sleep } from "./util";
 
@@ -73,6 +74,18 @@ const main = async () => {
   const ads = uniq(await query_ads_linearly(url));
   console.log(`${ads.length} offer(s) found`);
   console.log(ads);
+
+  const flats: (Flat | "captcha")[] = [];
+  for (const url of ads) {
+    flats.push(
+      await (async () => {
+        console.log(`Sleeping for ${time_between_requests} seconds to avoid captcha`);
+        await sleep(time_between_requests);
+        return await parse_flat(url);
+      })()
+    );
+  }
+  console.log(flats);
 };
 
 main();
