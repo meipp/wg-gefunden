@@ -175,12 +175,12 @@ const parse_flat = async (url: string): Promise<Flat> => {
   return await selectorFromURL(url, (sel) => {
     const contact = sel.$("div.rhs_contact_information > div.panel-body");
     let profile_image: string | undefined = undefined;
-    const style = contact
+
+    const image_div = contact
       .single()
-      .$("div.profile_image_dav.cursor-pointer")
-      .single()
-      .attribute("style");
-    if (style) {
+      .$("div.profile_image_dav.cursor-pointer");
+    if (image_div.exists()) {
+      const style = image_div.single().attribute("style");
       profile_image = style.match(/background-image: url\('(.*)'\)/)?.[1];
     }
 
