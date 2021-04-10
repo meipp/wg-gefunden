@@ -117,8 +117,11 @@ class Selector {
   }
 
   public single(): SingleSelector {
-    if (this.selection.length !== 1) {
-      throw error("Does not have exactly one element", this.selection_history);
+    if (this.selection.length === 0) {
+      throw error("No such element exists", this.selection_history);
+    }
+    if (this.selection.length > 1) {
+      throw error("Has more than one element", this.selection_history);
     }
     const [e] = this.selection;
     return new SingleSelector(e, this.selection_history);
