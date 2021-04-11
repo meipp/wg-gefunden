@@ -5,9 +5,7 @@ import { selectorFromURL, sleep } from "./util";
 
 // For some reason it is not possible to generate query urls with specific page numbers in them.
 // Hence, querying is done linearly by pressing the "next page" button each time.
-const query_ads_linearly = async (
-  query_url: string
-): Promise<string[] | "captcha"> => {
+const query_ads_linearly = async (query_url: string): Promise<string[]> => {
   return await selectorFromURL(query_url, async (sel) => {
     // If there is only one page, the pagination bar will be omitted
     // and Math.max() would be called with zero arguments.
@@ -65,7 +63,7 @@ const main = async () => {
   console.log(`${ads.length} offer(s) found`);
   console.log(ads);
 
-  const flats: (Flat | "captcha")[] = [];
+  const flats: Flat[] = [];
   for (const url of ads) {
     flats.push(
       await parse_flat(url).catch((err) => {

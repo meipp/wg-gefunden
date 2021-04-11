@@ -160,7 +160,7 @@ const parse_property_details = (details: SingleSelector): string[] => {
   return tags;
 };
 
-const parse_flat = async (url: string): Promise<Flat | "captcha"> => {
+const parse_flat = async (url: string): Promise<Flat> => {
   return await selectorFromURL(url, (sel) => {
     const contact = sel.$("div.rhs_contact_information > div.panel-body");
     let profile_image: string | undefined = undefined;

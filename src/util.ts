@@ -1,5 +1,5 @@
-import axios from "axios";
 import { Selector } from "./selector";
+import { request, rotateIP } from "./async-tor-request";
 
 const concat = <A>(as: A[][]): A[] => {
   return ([] as A[]).concat(...as);
@@ -11,29 +11,21 @@ const sleep = async (seconds: number) => {
 
 const selectorFromURL = async <A>(
   url: string,
-  callback: (data: Selector) => A,
-  retries: number = 2,
-  seconds: number = 60
-): Promise<A | "captcha"> => {
-  const { status, statusText, data } = await axios.get(url);
+  callback: (data: Selector) => A
+): Promise<A> => {
+  const { status, statusText, data } = await request(url);
   if (status !== 200) {
     throw new Error(`Request failed with status code ${status}: ${statusText}`);
   }
 
   const sel = Selector.from(data);
   if (sel.$(".g-recaptcha").exists()) {
-    if (retries === 0) {
-      console.error(`Encountered captcha while loading ${url}. Terminating`);
-      return "captcha";
-    } else {
-      console.error(
-        `Encountered captcha while loading ${url}. Retrying in ${seconds} seconds...`
-      );
-      await sleep(seconds);
-      return selectorFromURL(url, callback, retries - 1, seconds);
-    }
+    console.error(`Encountered captcha while loading ${url}. Rotating IP...`);
+    await rotateIP();
+    return selectorFromURL(url, callback);
+  } else {
+    return callback(sel);
   }
-  return callback(sel);
 };
 
 export { concat, sleep, selectorFromURL };
