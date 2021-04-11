@@ -3,10 +3,6 @@ import { Flat, parse_flat } from "./flat";
 import { assert_regex } from "./regex";
 import { selectorFromURL, sleep } from "./util";
 
-// Number of seconds between each request
-// Used to avoid bot detection/captcha
-const time_between_requests = 30
-
 // For some reason it is not possible to generate query urls with specific page numbers in them.
 // Hence, querying is done linearly by pressing the "next page" button each time.
 const query_ads_linearly = async (
@@ -53,13 +49,7 @@ const query_ads_linearly = async (
       .map((href) => `https://www.wg-gesucht.de/${href}`);
 
     return ads.concat(
-      ...(await Promise.all(
-        next_page.map(async (url) => {
-          console.log(`Sleeping for ${time_between_requests} seconds to avoid captcha`);
-          await sleep(time_between_requests);
-          return query_ads_linearly(url);
-        })
-      ))
+      ...(await Promise.all(next_page.map(query_ads_linearly)))
     );
   });
 };
@@ -78,11 +68,10 @@ const main = async () => {
   const flats: (Flat | "captcha")[] = [];
   for (const url of ads) {
     flats.push(
-      await (async () => {
-        console.log(`Sleeping for ${time_between_requests} seconds to avoid captcha`);
-        await sleep(time_between_requests);
-        return await parse_flat(url);
-      })()
+      await parse_flat(url).catch((err) => {
+        err.message = `Error while parsing ${url}: ` + err.message;
+        return err;
+      })
     );
   }
   console.log(flats);
